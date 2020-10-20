@@ -15,18 +15,23 @@ public class ThreadDemo extends Thread {
         this.player = player;
     }
 
+    /** Run method*/
     public void run() {
         int numPotions;
         int attackStrength;
 
+        // Randomly assign monster's strength
         attackStrength = rand.nextInt(5);
         for (int i = 0; i < NUM_ACTIVITIES; i++) {
+            // If it is an even method, then add potions
             if (i % 2 == 0) {
                 numPotions = player.getNumPotions();
                 if (numPotions > 0) {
                     player.increaseHP(10);
                     player.setNumPotions(--numPotions);
                 }
+
+            // If it is an odd method, then attack
             } else {
                     if (player.getHP() <= 0) {
                         break;
