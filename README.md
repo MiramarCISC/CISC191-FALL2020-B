@@ -23,37 +23,37 @@ This is a single player game where you can navigate worlds, battle monsters, and
 # Draft 1: UML Planning
 
 ## Class Player extends Thread
-&#8211 MAXHEALTHPOINTS: final int  
+&ndash MAXHEALTHPOINTS: final int  
 &#8211 healthPoints: int  
 '- numTreasures: int   
 '- strength: int  
 '- posX: int  
 '- posY: int  
-- + Player()
-- + getHealthPoints(): int
-- + setHealthPoints(int): void
-- + getNumTreasures(): int
-- + setNumTreasures(int): void
-- + attack(Monster): void
-- + usePotion(): void
-- + updateX(): void
-- + updateY(): void
-- + updatePosition(): void
++ Player()  
++ getHealthPoints(): int  
++ setHealthPoints(int): void  
++ getNumTreasures(): int  
++ setNumTreasures(int): void  
++ attack(Monster): void  
++ usePotion(): void  
++ updateX(): void  
++ updateY(): void  
++ updatePosition(): void  
 
 ## Class Grid
-- + setBackground(): void
-- + setObject(): void
-- + actionWithExecutorService(): void
++ setBackground(): void  
++ setObject(): void  
++ actionWithExecutorService(): void  
 
 ## Class Monster extends Thread
 - healthPoints: int
 - maxAttackStrength: int
 - posX: int
 - posY: int
-- + Monster()
-- + getHealthPoints(): int
-- + setHealthPoints(int)
-- + attack(Player): void
-- + updateX(): void
-- + updateY(): void
-- + updatePosition(): void
++ Monster()
++ getHealthPoints(): int  
++ setHealthPoints(int)  
++ attack(Player): void  
++ updateX(): void  
++ updateY(): void  
++ updatePosition(): void  
