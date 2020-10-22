@@ -46,7 +46,7 @@ This is a single player game where you can navigate worlds, battle monsters, and
     - test and debug
 
 # Draft 1: UML Planning
-class Player {
+class Player {  
     - MAXHEALTHPOINTS: final int  
     - healthPoints: int  
     - numTreasures: int   
@@ -62,21 +62,21 @@ class Player {
     + usePotion(): void  
     + updateX(): void  
     + updateY(): void  
-    + updatePosition(): void 
+    + updatePosition(): void  
 } 
 
-class Grid {
-    + setBackground(): void  
+class Grid {  
+    + setBackground(): void   
     + setObject(): void  
     + actionWithExecutorService(): void 
 } 
 
-class Thread {
-    - healthPoints: int
-    - maxAttackStrength: int
-    - posX: int
-    - posY: int
-    + Monster()
+class Thread {  
+    - healthPoints: int  
+    - maxAttackStrength: int  
+    - posX: int  
+    - posY: int  
+    + Monster()  
     + getHealthPoints(): int  
     + setHealthPoints(int)  
     + attack(Player): void  
