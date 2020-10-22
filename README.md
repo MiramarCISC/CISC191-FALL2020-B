@@ -36,17 +36,16 @@ This is a single player game where you can navigate worlds, battle monsters, and
 # Logistics
 1. October 25: UML diagram/pseudocode
 2. November 7:
-  - map generation
-  - player generation
-  - monster generation
-  - threading class
+    - map generation
+    - player generation
+    - monster generation
+    - threading class
 3. November 14: (depends on 2)
-  - incorporate components
+    - incorporate components
 4. November 21: (depends on 3)
-  - test and debug
+    - test and debug
 
 # Draft 1: UML Planning
-@startuml
 class Player {
     - MAXHEALTHPOINTS: final int  
     - healthPoints: int  
@@ -85,4 +84,3 @@ class Thread {
     + updateY(): void  
     + updatePosition(): void  
 }
-@enduml
