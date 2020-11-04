@@ -1,0 +1,13 @@
+<component name="libraryTable">
+  <library name="javafx-sdk-15">
+    <CLASSES>
+      <root url="file://$JAVAFX$/lib" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="file://$JAVAFX$/lib" />
+    </SOURCES>
+    <jarDirectory url="file://$JAVAFX$/lib" recursive="false" />
+    <jarDirectory url="file://$JAVAFX$/lib" recursive="false" type="SOURCES" />
+  </library>
+</component>
