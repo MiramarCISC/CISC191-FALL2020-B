@@ -3,24 +3,26 @@ package sample;
 // Refer to https://stackoverflow.com/questions/29057870/in-javafx-how-do-i-move-a-sprite-across-the-screen
 // Refer to https://www.youtube.com/watch?v=kkZ-YNv7B0E
 
-import javafx.animation.Animation;
 import javafx.animation.AnimationTimer;
 import javafx.application.Application;
 import javafx.event.EventHandler;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.KeyCode;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.Group;
 import javafx.scene.image.Image;
+
+import java.awt.event.KeyListener;
 import java.io.FileInputStream;
 import java.util.Random;
 
 public class Main extends Application {
-    boolean goUp, goDown, goLeft, goRight;
+    boolean goUp, goDown, goLeft, goRight, attacked;
     double minX, minY, maxX, maxY;
     Node icon;
     long timeNow = System.currentTimeMillis();
@@ -33,6 +35,7 @@ public class Main extends Application {
         Node monster;
         Random rand = new Random();
         timeNow = System.currentTimeMillis();
+        String path = System.getProperty("user.dir");
 
         try {
             Group root = new Group();
@@ -54,25 +57,29 @@ public class Main extends Application {
 
             // Sprite
             // Eventually move sprite details to class: get file name, get icon size
-            FileInputStream spriteStream = new FileInputStream("C:\\Users\\cheun\\Desktop\\CISC191-FALL2020-B\\main\\Test2\\src\\sample\\images\\sprite.png");
+            String spriteFileName = path + "\\src\\sample\\images\\sprite.png";
+            Player newPlayer = new Player(spriteFileName);
+            FileInputStream spriteStream = new FileInputStream(spriteFileName);
             Image spriteImage = new Image(spriteStream);
             ImageView spriteIcon = new ImageView(spriteImage);
-            spriteIcon.setFitHeight(30);
-            spriteIcon.setFitWidth(30);
+            spriteIcon.setFitHeight(newPlayer.getImgHeight());
+            spriteIcon.setFitWidth(newPlayer.getImgWidth());
             icon = spriteIcon;
-            icon.relocate(300, 200);
+            icon.relocate(newPlayer.getXPos(), newPlayer.getYPos());
             root.getChildren().add(icon);
 
             // Monster
             // Eventually move monster to class: get file name; get icon size (needs attack strength, speed)
             // Randomly generate monster (create a new method to handle this and add to vector here)
-            FileInputStream monsterStream = new FileInputStream("C:\\Users\\cheun\\Desktop\\CISC191-FALL2020-B\\main\\Test2\\src\\sample\\images\\monster.png");
+            String monsterImg = path + "\\src\\sample\\images\\monster.png";
+            Monster newMonster = new Monster(monsterImg);
+            FileInputStream monsterStream = new FileInputStream(monsterImg);
             Image monsterImage = new Image(monsterStream);
             ImageView monsterIcon = new ImageView(monsterImage);
-            monsterIcon.setFitHeight(30);
-            monsterIcon.setFitWidth(30);
+            monsterIcon.setFitHeight(newMonster.getImgHeight());
+            monsterIcon.setFitWidth(newMonster.getImgWidth());
             monster = monsterIcon;
-            monster.relocate(rand.nextInt(1000), rand.nextInt(500));
+            monster.relocate(newMonster.getXPos(), newMonster.getYPos());
             root.getChildren().add(monster);
 
             // Scene
@@ -86,15 +93,20 @@ public class Main extends Application {
 
             // Sprite and monster movements
             // add threading here? perform movement for character and loop through monster vector
-            movement(scene, icon);
-            monsterMovement(scene, monsterIcon);
+            movement(scene, icon, newPlayer);
+            monsterMovement(scene, monsterIcon, newMonster);
+            checkDistance(scene, newPlayer, newMonster);
+            stillExists(root, monsterIcon, newMonster);
+            stillExists(root, icon, newPlayer);
+
+            System.out.println("Player HP: " + newPlayer.getHealthPoints() + ", Monster HP: " + newMonster.getHealthPoints());
 
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    public void movement(Scene scene, Node icon) {
+    public void movement(Scene scene, Node icon, Player myPlayer) {
         // eventually move character position to character class and use get and set
         // eventually add a keypress event to update character attacks/potions, etc.
         // find out how to end the game (close window or close panes) when the character has died
@@ -151,12 +163,14 @@ public class Main extends Application {
                 if (goLeft && (currX - delta > minX)) currX -= delta;
                 if (goRight && (currX + delta < maxX)) currX += delta;
                 icon.relocate(currX, currY);
+                myPlayer.setXPos(currX);
+                myPlayer.setYPos(currY);
             }
         };
         timer.start();
     }
 
-    public void monsterMovement(Scene scene, Node monster) {
+    public void monsterMovement(Scene scene, Node monster, Monster thisMonster) {
         // Eventually move all monster parameters to class and update position/ get position
         // add an attack method where if the monster is close enough, change attack at a timer
         double time;
@@ -185,10 +199,63 @@ public class Main extends Application {
                 if (direction == 2 && (currX - delta > minX)) currX -= delta;
                 if (direction == 3 && (currX + delta < maxX)) currX += delta;
                 monster.relocate(currX, currY);
+                thisMonster.setXPos(currX);
+                thisMonster.setYPos(currY);
             }
         };
         timer.start();
     }
+
+    public void checkDistance(Scene scene, Player thisPlayer, Monster thisMonster) {
+        double playerX = thisPlayer.getXPos();
+        double playerY = thisPlayer.getYPos();
+        double monsterX = thisMonster.getXPos();
+        double monsterY = thisMonster.getYPos();
+        double distance = Math.pow((Math.pow((playerX - monsterX), 2) + Math.pow((playerY - monsterY), 2)), 0.5);
+        if (distance <= 100) {
+            thisPlayer.attacked(thisMonster.getAttackStrength());
+
+            scene.setOnKeyPressed(new EventHandler<KeyEvent>() {
+                @Override
+                public void handle(KeyEvent keyEvent) {
+                    if (keyEvent.getCode() == KeyCode.D) {
+                        attacked = true;
+                    }
+                }
+            });
+
+            scene.setOnKeyReleased(new EventHandler<KeyEvent>() {
+                @Override
+                public void handle(KeyEvent keyEvent) {
+                    if (keyEvent.getCode() == KeyCode.D) {
+                        attacked = false;
+                    }
+                }
+            });
+
+            AnimationTimer timer = new AnimationTimer() {
+                double delta = 5;
+
+                @Override
+                public void handle(long arg0) {
+                    if (attacked) {
+                        thisMonster.attacked(thisPlayer.attackStrength);
+                        System.out.println("Player HP: " + thisPlayer.getHealthPoints() +
+                                ", Monster HP: " + thisMonster.getHealthPoints());
+                    }
+
+                }
+            };
+            timer.start();
+        }
+    }
+
+    public void stillExists(Group root, Node characterNode, Character thisCharacter) {
+        if (thisCharacter.checkStatus()) {
+            root.getChildren().remove(characterNode);
+        }
+    }
+
 
     public static void main(String[] args) {
         launch(args);
