@@ -1,6 +1,6 @@
 package sample;
 
-public abstract class Character {
+public abstract class Character extends Thread {
     double xPos,
            yPos,
            imgHeight,

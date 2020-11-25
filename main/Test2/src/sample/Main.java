@@ -9,7 +9,6 @@ import javafx.event.EventHandler;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.image.ImageView;
-import javafx.scene.input.KeyCode;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
@@ -17,14 +16,17 @@ import javafx.scene.input.KeyEvent;
 import javafx.scene.Group;
 import javafx.scene.image.Image;
 
-import java.awt.event.KeyListener;
 import java.io.FileInputStream;
 import java.util.Random;
+import java.util.Vector;
 
 public class Main extends Application {
     boolean goUp, goDown, goLeft, goRight, attacked;
     double minX, minY, maxX, maxY;
     Node icon;
+    Node monster;
+    Vector<Node> potions;
+    Node potion;
     long timeNow = System.currentTimeMillis();
 
     @Override
@@ -32,7 +34,6 @@ public class Main extends Application {
         primaryStage.setTitle("Test Game");
 
         // Monsters
-        Node monster;
         Random rand = new Random();
         timeNow = System.currentTimeMillis();
         String path = System.getProperty("user.dir");
@@ -82,6 +83,18 @@ public class Main extends Application {
             monster.relocate(newMonster.getXPos(), newMonster.getYPos());
             root.getChildren().add(monster);
 
+            // Potion
+            String potionImg = path + "\\src\\sample\\images\\potion.png";
+            Potion newPotion = new Potion(potionImg);
+            FileInputStream potionStream = new FileInputStream(potionImg);
+            Image potionImage = new Image(potionStream);
+            ImageView potionIcon = new ImageView(potionImage);
+            potionIcon.setFitHeight(newPotion.getImgHeight());
+            potionIcon.setFitWidth(newPotion.getImgWidth());
+            potion = potionIcon;
+            potion.relocate(newPotion.getXPos(), newPotion.getYPos());
+            root.getChildren().add(potion);
+
             // Scene
             Scene scene = new Scene(root, 1000, 500);
             minX = 0;
@@ -93,23 +106,22 @@ public class Main extends Application {
 
             // Sprite and monster movements
             // add threading here? perform movement for character and loop through monster vector
-            movement(scene, icon, newPlayer);
-            monsterMovement(scene, monsterIcon, newMonster);
-            checkDistance(scene, newPlayer, newMonster);
-            stillExists(root, monsterIcon, newMonster);
-            stillExists(root, icon, newPlayer);
+            movement(root, scene, icon, newPlayer, monster, newMonster, potion);
+            //monsterMovement(scene, monsterIcon, newMonster);
 
-            System.out.println("Player HP: " + newPlayer.getHealthPoints() + ", Monster HP: " + newMonster.getHealthPoints());
+            System.out.println("Player HP: " + newPlayer.getHealthPoints()
+                    + ", Monster HP: " + newMonster.getHealthPoints());
 
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    public void movement(Scene scene, Node icon, Player myPlayer) {
+    public void movement(Group root, Scene scene, Node icon, Player myPlayer, Node monsterIcon, Monster myMonster, Node myPotion) {
         // eventually move character position to character class and use get and set
         // eventually add a keypress event to update character attacks/potions, etc.
         // find out how to end the game (close window or close panes) when the character has died
+
         scene.setOnKeyPressed(new EventHandler<KeyEvent>() {
             @Override
             public void handle(KeyEvent keyEvent) {
@@ -125,6 +137,9 @@ public class Main extends Application {
                         break;
                     case RIGHT:
                         goRight = true;
+                        break;
+                    case D:
+                        attacked = true;
                         break;
                 }
             }
@@ -146,116 +161,117 @@ public class Main extends Application {
                     case RIGHT:
                         goRight = false;
                         break;
+                    case D:
+                        attacked = false;
+                        break;
                 }
             }
         });
 
         AnimationTimer timer = new AnimationTimer() {
             double delta = 5;
-
-            @Override
-            public void handle(long arg0) {
-                double currX = icon.getLayoutX();
-                double currY = icon.getLayoutY();
-
-                if (goUp && (currY - delta> minY)) currY -= delta;
-                if (goDown && (currY + delta < maxY)) currY += delta;
-                if (goLeft && (currX - delta > minX)) currX -= delta;
-                if (goRight && (currX + delta < maxX)) currX += delta;
-                icon.relocate(currX, currY);
-                myPlayer.setXPos(currX);
-                myPlayer.setYPos(currY);
-            }
-        };
-        timer.start();
-    }
-
-    public void monsterMovement(Scene scene, Node monster, Monster thisMonster) {
-        // Eventually move all monster parameters to class and update position/ get position
-        // add an attack method where if the monster is close enough, change attack at a timer
-        double time;
-        double currX = monster.getLayoutX();
-        double currY = monster.getLayoutY();
-
-        AnimationTimer timer = new AnimationTimer() {
-            double delta = 5;
+            double monsterDelta = 1;
             int direction;
             Random rand = new Random();
 
             @Override
             public void handle(long arg0) {
-                double currX = monster.getLayoutX();
-                double currY = monster.getLayoutY();
+                // Icon
+                double currX = icon.getLayoutX();
+                double currY = icon.getLayoutY();
+                double monsterX = myMonster.getXPos();
+                double monsterY = myMonster.getYPos();
+                double potionX = potion.getLayoutX();
+                double potionY = potion.getLayoutY();
+
+                double distance = Math.sqrt(Math.pow((currX-monsterX),2)+Math.pow((currY-monsterY), 2));
+                double distance2 = Math.sqrt(Math.pow((currX-potionX),2)+Math.pow((currY-potionY), 2));
+
+                if (goUp && (currY - delta> minY)) currY -= delta;
+                if (goDown && (currY + delta < maxY)) currY += delta;
+                if (goLeft && (currX - delta > minX)) currX -= delta;
+                if (goRight && (currX + delta < maxX)) currX += delta;
+                if (distance2 <= 100) {
+                    myPlayer.encounterPotion();
+                    root.getChildren().remove(potion);
+                    System.out.println("Player HP: " + myPlayer.getHealthPoints());
+                }
+                if (attacked && distance <= 100) {
+                    myMonster.attacked(myPlayer.attackStrength);
+                    myPlayer.attacked(myMonster.attackStrength);
+
+                    if (myPlayer.checkStatus() == true) {
+                        System.out.println("Game over.");
+                        root.getChildren().remove(icon);
+                    } else if (myMonster.checkStatus() == true) {
+                        System.out.println("You defeated the monster!");
+                        root.getChildren().remove(monster);
+                    } else {
+                        System.out.println("Player HP: " + myPlayer.getHealthPoints()
+                                + ", Monster HP: " + myMonster.getHealthPoints());
+                    }
+                }
+                icon.relocate(currX, currY);
+                myPlayer.setXPos(currX);
+                myPlayer.setYPos(currY);
+
+                // Monster Information
+                double monsterCurrX = monster.getLayoutX();
+                double monsterCurrY = monster.getLayoutY();
                 long time2 = System.currentTimeMillis();
 
-                if ((time2 - timeNow) % 100 == 0 ||
-                     ((currX - delta) < 0)|| ((currX + delta) > maxX) ||
-                        ((currY - delta) < 0) || ((currY + delta) > maxY)) {
+                if ((time2 - timeNow) % 3000 == 0 ||
+                        ((monsterCurrX - monsterDelta) < 0)|| ((monsterCurrX + monsterDelta) > maxX) ||
+                        ((monsterCurrY - monsterDelta) < 0) || ((monsterCurrY + monsterDelta) > maxY)) {
 
                     direction = rand.nextInt(4);
                 }
-                if (direction == 0 && (currY - delta> minY)) currY -= delta;
-                if (direction == 1 && (currY + delta< maxY)) currY += delta;
-                if (direction == 2 && (currX - delta > minX)) currX -= delta;
-                if (direction == 3 && (currX + delta < maxX)) currX += delta;
-                monster.relocate(currX, currY);
-                thisMonster.setXPos(currX);
-                thisMonster.setYPos(currY);
+                if (direction == 0 && (monsterCurrY - monsterDelta > minY)) monsterCurrY -= monsterDelta;
+                if (direction == 1 && (monsterCurrY + monsterDelta < maxY)) monsterCurrY += monsterDelta;
+                if (direction == 2 && (monsterCurrX - monsterDelta > minX)) monsterCurrX -= monsterDelta;
+                if (direction == 3 && (monsterCurrX + monsterDelta < maxX)) monsterCurrX += monsterDelta;
+                monster.relocate(monsterCurrX, monsterCurrY);
+                myMonster.setXPos(monsterCurrX);
+                myMonster.setYPos(monsterCurrY);
+
+
             }
         };
         timer.start();
     }
 
-    public void checkDistance(Scene scene, Player thisPlayer, Monster thisMonster) {
-        double playerX = thisPlayer.getXPos();
-        double playerY = thisPlayer.getYPos();
-        double monsterX = thisMonster.getXPos();
-        double monsterY = thisMonster.getYPos();
-        double distance = Math.pow((Math.pow((playerX - monsterX), 2) + Math.pow((playerY - monsterY), 2)), 0.5);
-        if (distance <= 100) {
-            thisPlayer.attacked(thisMonster.getAttackStrength());
+    public void monsterMovement(Scene scene, Node monsterNode, Monster thisMonster) {
+        // Eventually move all monster parameters to class and update position/ get position
+        // add an attack method where if the monster is close enough, change attack at a timer
 
-            scene.setOnKeyPressed(new EventHandler<KeyEvent>() {
-                @Override
-                public void handle(KeyEvent keyEvent) {
-                    if (keyEvent.getCode() == KeyCode.D) {
-                        attacked = true;
-                    }
+        AnimationTimer timer = new AnimationTimer() {
+            double monsterDelta = 1;
+            int direction;
+            Random rand = new Random();
+
+            @Override
+            public void handle(long arg0) {
+                double monsterCurrX = monsterNode.getLayoutX();
+                double monsterCurrY = monsterNode.getLayoutY();
+                long time2 = System.currentTimeMillis();
+
+                if ((time2 - timeNow) % 3000 == 0 ||
+                     ((monsterCurrX - monsterDelta) < 0)|| ((monsterCurrX + monsterDelta) > maxX) ||
+                        ((monsterCurrY - monsterDelta) < 0) || ((monsterCurrY + monsterDelta) > maxY)) {
+
+                    direction = rand.nextInt(4);
                 }
-            });
-
-            scene.setOnKeyReleased(new EventHandler<KeyEvent>() {
-                @Override
-                public void handle(KeyEvent keyEvent) {
-                    if (keyEvent.getCode() == KeyCode.D) {
-                        attacked = false;
-                    }
-                }
-            });
-
-            AnimationTimer timer = new AnimationTimer() {
-                double delta = 5;
-
-                @Override
-                public void handle(long arg0) {
-                    if (attacked) {
-                        thisMonster.attacked(thisPlayer.attackStrength);
-                        System.out.println("Player HP: " + thisPlayer.getHealthPoints() +
-                                ", Monster HP: " + thisMonster.getHealthPoints());
-                    }
-
-                }
-            };
-            timer.start();
-        }
+                if (direction == 0 && (monsterCurrY - monsterDelta > minY)) monsterCurrY -= monsterDelta;
+                if (direction == 1 && (monsterCurrY + monsterDelta < maxY)) monsterCurrY += monsterDelta;
+                if (direction == 2 && (monsterCurrX - monsterDelta > minX)) monsterCurrX -= monsterDelta;
+                if (direction == 3 && (monsterCurrX + monsterDelta < maxX)) monsterCurrX += monsterDelta;
+                monsterNode.relocate(monsterCurrX, monsterCurrY);
+                thisMonster.setXPos(monsterCurrX);
+                thisMonster.setYPos(monsterCurrY);
+            }
+        };
+        timer.start();
     }
-
-    public void stillExists(Group root, Node characterNode, Character thisCharacter) {
-        if (thisCharacter.checkStatus()) {
-            root.getChildren().remove(characterNode);
-        }
-    }
-
 
     public static void main(String[] args) {
         launch(args);

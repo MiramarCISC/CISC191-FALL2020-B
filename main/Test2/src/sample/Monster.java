@@ -11,7 +11,7 @@ public class Monster extends Character {
         this.yPos = rand.nextInt(500);
         this.healthPoints = rand.nextInt(50);
         this.imgFile = imgFile;
-        this.attackStrength = this.healthPoints/2;
+        this.attackStrength = this.healthPoints/10;
     }
 
 }
