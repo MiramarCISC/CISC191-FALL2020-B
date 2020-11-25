@@ -23,20 +23,19 @@ import java.util.Vector;
 public class Main extends Application {
     boolean goUp, goDown, goLeft, goRight, attacked;
     double minX, minY, maxX, maxY;
-    Node icon;
-    Node monster;
-    Vector<Node> potions;
-    Node potion;
+    Vector<Node> monsters = new Vector<Node>();
+    Vector<Node> potions = new Vector<Node>();
+    Node icon, monster, potion;
     long timeNow = System.currentTimeMillis();
+    Random rand = new Random();
+    String path = System.getProperty("user.dir");
 
     @Override
     public void start(Stage primaryStage) throws Exception{
         primaryStage.setTitle("Test Game");
 
         // Monsters
-        Random rand = new Random();
         timeNow = System.currentTimeMillis();
-        String path = System.getProperty("user.dir");
 
         try {
             Group root = new Group();
@@ -72,6 +71,8 @@ public class Main extends Application {
             // Monster
             // Eventually move monster to class: get file name; get icon size (needs attack strength, speed)
             // Randomly generate monster (create a new method to handle this and add to vector here)
+            //Monster newMonster = createMonster(root);
+            
             String monsterImg = path + "\\src\\sample\\images\\monster.png";
             Monster newMonster = new Monster(monsterImg);
             FileInputStream monsterStream = new FileInputStream(monsterImg);
@@ -82,18 +83,7 @@ public class Main extends Application {
             monster = monsterIcon;
             monster.relocate(newMonster.getXPos(), newMonster.getYPos());
             root.getChildren().add(monster);
-
-            // Potion
-            String potionImg = path + "\\src\\sample\\images\\potion.png";
-            Potion newPotion = new Potion(potionImg);
-            FileInputStream potionStream = new FileInputStream(potionImg);
-            Image potionImage = new Image(potionStream);
-            ImageView potionIcon = new ImageView(potionImage);
-            potionIcon.setFitHeight(newPotion.getImgHeight());
-            potionIcon.setFitWidth(newPotion.getImgWidth());
-            potion = potionIcon;
-            potion.relocate(newPotion.getXPos(), newPotion.getYPos());
-            root.getChildren().add(potion);
+            //monsters.add(monster);
 
             // Scene
             Scene scene = new Scene(root, 1000, 500);
@@ -101,12 +91,17 @@ public class Main extends Application {
             minY = 0;
             maxX = 1000 - 30;
             maxY = 500 - 30;
+
+            // Potions
+            createPotions(scene, root);
+
+
             primaryStage.setScene(scene);
             primaryStage.show();
 
             // Sprite and monster movements
             // add threading here? perform movement for character and loop through monster vector
-            movement(root, scene, icon, newPlayer, monster, newMonster, potion);
+            movement(primaryStage, root, scene, icon, newPlayer, monster, newMonster);
             //monsterMovement(scene, monsterIcon, newMonster);
 
             System.out.println("Player HP: " + newPlayer.getHealthPoints()
@@ -117,7 +112,7 @@ public class Main extends Application {
         }
     }
 
-    public void movement(Group root, Scene scene, Node icon, Player myPlayer, Node monsterIcon, Monster myMonster, Node myPotion) {
+    public void movement(Stage primaryStage, Group root, Scene scene, Node icon, Player myPlayer, Node monsterIcon, Monster myMonster) {
         // eventually move character position to character class and use get and set
         // eventually add a keypress event to update character attacks/potions, etc.
         // find out how to end the game (close window or close panes) when the character has died
@@ -179,23 +174,37 @@ public class Main extends Application {
                 // Icon
                 double currX = icon.getLayoutX();
                 double currY = icon.getLayoutY();
+                long time2 = System.currentTimeMillis();
                 double monsterX = myMonster.getXPos();
                 double monsterY = myMonster.getYPos();
-                double potionX = potion.getLayoutX();
-                double potionY = potion.getLayoutY();
 
                 double distance = Math.sqrt(Math.pow((currX-monsterX),2)+Math.pow((currY-monsterY), 2));
-                double distance2 = Math.sqrt(Math.pow((currX-potionX),2)+Math.pow((currY-potionY), 2));
 
                 if (goUp && (currY - delta> minY)) currY -= delta;
                 if (goDown && (currY + delta < maxY)) currY += delta;
                 if (goLeft && (currX - delta > minX)) currX -= delta;
                 if (goRight && (currX + delta < maxX)) currX += delta;
-                if (distance2 <= 100) {
-                    myPlayer.encounterPotion();
-                    root.getChildren().remove(potion);
-                    System.out.println("Player HP: " + myPlayer.getHealthPoints());
+
+                // CHECK THAT CLOSE TO POTIONS
+                double potionX;
+                double potionY;
+
+                for (int i = 0 ; i < potions.size(); i++) {
+                    potionX = potions.get(i).getLayoutX();
+                    potionY = potions.get(i).getLayoutY();
+                    if (checkDistance(potionX, potionY, currX, currY)) {
+                        myPlayer.encounterPotion();
+                        root.getChildren().remove(potions.get(i));
+                        potions.remove(i);
+                        System.out.println("Player HP: " + myPlayer.getHealthPoints());
+                    }
                 }
+                // Create new potion if appropriate time
+                if (Math.round((time2 - timeNow)) % 500 == 0) {
+                    createPotions(scene, root);
+                }
+
+                // CHECK THAT CLOSE TO MONSTER
                 if (attacked && distance <= 100) {
                     myMonster.attacked(myPlayer.attackStrength);
                     myPlayer.attacked(myMonster.attackStrength);
@@ -218,7 +227,6 @@ public class Main extends Application {
                 // Monster Information
                 double monsterCurrX = monster.getLayoutX();
                 double monsterCurrY = monster.getLayoutY();
-                long time2 = System.currentTimeMillis();
 
                 if ((time2 - timeNow) % 3000 == 0 ||
                         ((monsterCurrX - monsterDelta) < 0)|| ((monsterCurrX + monsterDelta) > maxX) ||
@@ -271,6 +279,48 @@ public class Main extends Application {
             }
         };
         timer.start();
+    }
+
+    public boolean checkDistance(double x1, double y1, double x2, double y2) {
+        double distance = Math.sqrt(Math.pow(x1 - x2, 2) + (Math.pow(y1 - y2, 2)));
+        return (distance <= 50);
+    }
+    public void createPotions(Scene scene, Group root) {
+        try {
+            Node newPotionNode;
+            String potionImg = path + "\\src\\sample\\images\\potion.png";
+            Potion newPotion = new Potion(potionImg);
+            FileInputStream potionStream = new FileInputStream(potionImg);
+            Image potionImage = new Image(potionStream);
+            ImageView potionIcon = new ImageView(potionImage);
+            potionIcon.setFitHeight(newPotion.getImgHeight());
+            potionIcon.setFitWidth(newPotion.getImgWidth());
+            newPotionNode = potionIcon;
+            potions.add(newPotionNode);
+            newPotionNode.relocate(newPotion.getXPos(), newPotion.getYPos());
+            root.getChildren().add(newPotionNode);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void createMonsters(Scene scene, Group root) {
+        try {
+            Node newMonsterNode;
+            String monsterImg = path + "\\src\\sample\\images\\monster.png";
+            Monster newMonster = new Monster(monsterImg);
+            FileInputStream monsterStream = new FileInputStream(monsterImg);
+            Image monsterImage = new Image(monsterStream);
+            ImageView monsterIcon = new ImageView(monsterImage);
+            monsterIcon.setFitHeight(newMonster.getImgHeight());
+            monsterIcon.setFitWidth(newMonster.getImgWidth());
+            newMonsterNode = monsterIcon;
+            monsters.add(newMonsterNode);
+            newMonsterNode.relocate(newMonster.getXPos(), newMonster.getYPos());
+            root.getChildren().add(newMonsterNode);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     public static void main(String[] args) {
