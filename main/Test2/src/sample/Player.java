@@ -18,12 +18,10 @@ public class Player extends Character {
         this.attackStrength += increasedDamage;
     }
 
-    public void attacked(int damage) {
-        try {
-            Thread.sleep(1 * 1000);
+    public void attacked(int damage, long timeStart, long timeEnd) {
+        if ((timeStart - timeEnd) % 10000 == 0) {
             this.healthPoints -= damage;
-        } catch (InterruptedException ie) {
-            Thread.currentThread().interrupt();
+            System.out.println("You've been hit! Player HP: " + this.getHealthPoints());
         }
     }
 }
