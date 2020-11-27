@@ -11,44 +11,45 @@ import javafx.scene.Scene;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
+import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.Group;
 import javafx.scene.image.Image;
-
 import java.io.FileInputStream;
 import java.util.Random;
 import java.util.Vector;
 
-public class Main extends Application {
+public class Main extends Application implements Runnable {
+    // Variables
     boolean goUp, goDown, goLeft, goRight, attacked;
     double minX, minY, maxX, maxY;
+    long timeNow = System.currentTimeMillis();
+    long monsterTime = System.currentTimeMillis();
+    long potionTime = System.currentTimeMillis();
     Vector<Node> monsters = new Vector<Node>();
     Vector<Node> potions = new Vector<Node>();
     Vector<Monster> monsterList = new Vector<Monster>();
-    Node icon, monster, potion;
-    long timeNow = System.currentTimeMillis();
-    Random rand = new Random();
+    Node icon;
     String path = System.getProperty("user.dir");
 
     @Override
     public void start(Stage primaryStage) throws Exception{
-        primaryStage.setTitle("Test Game");
+        // Game title
+        primaryStage.setTitle("Escape the Monsters");
 
-        // Monsters
-        timeNow = System.currentTimeMillis();
-
+        // Instantiate game
         try {
-            Group root = new Group();
 
+            // Setup Background
+            Group root = new Group();
             StackPane pane = new StackPane();
-            Pane monsterPane = new Pane();
             root.getChildren().add(pane);
-            root.getChildren().add(monsterPane);
 
             // Set Background
             // Eventually simply prompt map to give a scene and give boolean for which locations can be moved; give map dimensions
-            FileInputStream backgroundStream = new FileInputStream("C:\\Users\\cheun\\Desktop\\CISC191-FALL2020-B\\main\\Test2\\src\\sample\\images\\background2.png");
+            String backgroundFileName = path + "\\src\\sample\\images\\background2.png";
+            FileInputStream backgroundStream = new FileInputStream(backgroundFileName);
             Image backgroundImage = new Image(backgroundStream);
             ImageView backgroundiv = new ImageView();
             backgroundiv.setImage(backgroundImage);
@@ -56,8 +57,7 @@ public class Main extends Application {
             backgroundiv.setFitWidth(1000);
             pane.getChildren().add(backgroundiv);
 
-            // Sprite
-            // Eventually move sprite details to class: get file name, get icon size
+            // Initiate Sprite
             String spriteFileName = path + "\\src\\sample\\images\\sprite.png";
             Player newPlayer = new Player(spriteFileName);
             FileInputStream spriteStream = new FileInputStream(spriteFileName);
@@ -69,30 +69,27 @@ public class Main extends Application {
             icon.relocate(newPlayer.getXPos(), newPlayer.getYPos());
             root.getChildren().add(icon);
 
-            // Monster
-            // Eventually move monster to class: get file name; get icon size (needs attack strength, speed)
-            // Randomly generate monster (create a new method to handle this and add to vector here)
-
-
-            // Scene
+            // Setup Scene
             Scene scene = new Scene(root, 1000, 500);
             minX = 0;
             minY = 0;
             maxX = 1000 - 30;
             maxY = 500 - 30;
 
-            // Potions
+            // Initiate Potions
             createPotions(scene, root);
+
+            // Initiate Monster
             createMonsters(scene, root);
 
-
+            // Display GUI
             primaryStage.setScene(scene);
             primaryStage.show();
 
             // Sprite and monster movements
-            // add threading here? perform movement for character and loop through monster vector
             movement(primaryStage, root, scene, icon, newPlayer);
 
+            // Output Player's HP
             System.out.println("Player HP: " + newPlayer.getHealthPoints());
 
         } catch (Exception e) {
@@ -102,8 +99,6 @@ public class Main extends Application {
 
     public void movement(Stage primaryStage, Group root, Scene scene, Node icon, Player myPlayer) {
         // eventually move character position to character class and use get and set
-        // eventually add a keypress event to update character attacks/potions, etc.
-        // find out how to end the game (close window or close panes) when the character has died
 
         scene.setOnKeyPressed(new EventHandler<KeyEvent>() {
             @Override
@@ -183,10 +178,6 @@ public class Main extends Application {
                         System.out.println("Player HP: " + myPlayer.getHealthPoints());
                     }
                 }
-                // Create new potion if appropriate time
-                if (Math.round((time2 - timeNow)) % 500 == 0) {
-                    createPotions(scene, root);
-                }
 
                 // CHECK THAT CLOSE TO MONSTER
                 double monsterX;
@@ -201,10 +192,10 @@ public class Main extends Application {
                     }
                     if (checkDistance(monsterX, monsterY, currX, currY)) {
                         try {
-                            myPlayer.attacked(monsterList.get(i).getAttackStrength());
+                            myPlayer.attacked(monsterList.get(i).getAttackStrength(), time2, timeNow);
                             if (attacked) {
                                 try {
-                                    myPlayer.attacked(monsterList.get(i).getAttackStrength(), time2, timeNow);
+                                    System.out.println("Attacking!");
                                     monsterList.get(i).attacked(myPlayer.getAttackStrength());
                                 } catch (Exception e) {
                                 }
@@ -222,12 +213,13 @@ public class Main extends Application {
                     }
 
                     try {
-                        if ((time2 - timeNow) % 3000 == 0 ||
+                        if (Math.round(time2 - timeNow) % 5000 == 0 ||
                                 ((monsterX - monsterDelta) < 0)|| ((monsterX + monsterDelta) > maxX) ||
                                 ((monsterY - monsterDelta) < 0) || ((monsterY + monsterDelta) > maxY)) {
 
-                            direction = rand.nextInt(4);
+                            monsterList.get(i).setDirection(rand.nextInt(4));
                         }
+                        direction = monsterList.get(i).getDirection();
                         if (direction == 0 && (monsterY - monsterDelta > minY)) monsterY -= monsterDelta;
                         if (direction == 1 && (monsterY + monsterDelta < maxY)) monsterY += monsterDelta;
                         if (direction == 2 && (monsterX - monsterDelta > minX)) monsterX -= monsterDelta;
@@ -239,11 +231,18 @@ public class Main extends Application {
                     }
                 }
 
-                // Add a monster
-                if (Math.round((time2 - timeNow)) % 100 == 0) {
+                // Add a monster and potion
+                if (Math.round((System.currentTimeMillis() - monsterTime)/10) % 500 == 0) {
+                    monsterTime = System.currentTimeMillis();
                     createMonsters(scene, root);
                 }
 
+                if (Math.round((System.currentTimeMillis() - potionTime)/10) % 500 == 0) {
+                    potionTime = System.currentTimeMillis();
+                    createPotions(scene, root);
+                }
+
+                // Relocate player
                 icon.relocate(currX, currY);
                 myPlayer.setXPos(currX);
                 myPlayer.setYPos(currY);
@@ -326,6 +325,10 @@ public class Main extends Application {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    public void run() {
+
     }
 
     public static void main(String[] args) {

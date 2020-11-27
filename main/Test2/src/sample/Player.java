@@ -19,7 +19,7 @@ public class Player extends Character {
     }
 
     public void attacked(int damage, long timeStart, long timeEnd) {
-        if ((timeStart - timeEnd) % 10000 == 0) {
+        if (Math.round((timeStart - timeEnd) / 10) % 10 == 0) {
             this.healthPoints -= damage;
             System.out.println("You've been hit! Player HP: " + this.getHealthPoints());
         }

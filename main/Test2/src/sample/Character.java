@@ -1,6 +1,11 @@
 package sample;
 
+import java.util.Random;
+
+import java.util.Random;
+
 public abstract class Character extends Thread {
+    Random rand = new Random();
     double xPos,
            yPos,
            imgHeight,
