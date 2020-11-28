@@ -7,6 +7,7 @@ import javafx.animation.AnimationTimer;
 import javafx.application.Application;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
+import javafx.geometry.*;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
@@ -271,7 +272,7 @@ public class Main extends Application implements Runnable {
                 }
 
                 // Add a potion every 5 seconds
-                if (Math.round((System.currentTimeMillis() - potionTime)/10) % 500 == 0) {
+                if (Math.round((System.currentTimeMillis() - potionTime)/10) % 200 == 0) {
                     potionTime = System.currentTimeMillis();
                     createPotions(root);
                 }
@@ -296,6 +297,7 @@ public class Main extends Application implements Runnable {
         Text title = new Text();
         title.setText("Escape the Monsters");
         title.setFill(Paint.valueOf("white"));
+        introPane.setAlignment(title, Pos.TOP_CENTER);
         try {
             File file = new File(path + "\\src\\sample\\fonts\\FireBrathers-PersonalUse.otf");
             FileInputStream fileStream = new FileInputStream(file);
@@ -311,6 +313,7 @@ public class Main extends Application implements Runnable {
         startGame.setMaxWidth(WINDOW_WIDTH/4);
         startGame.setMinHeight(25);
         startGame.setMaxHeight(WINDOW_HEIGHT/10);
+        introPane.setAlignment(startGame, Pos.BOTTOM_CENTER);
         startGame.setOnAction(new EventHandler<ActionEvent>() {
             @Override
             public void handle(ActionEvent actionEvent) {
@@ -320,6 +323,8 @@ public class Main extends Application implements Runnable {
         });
 
         // Add Rectangle and Title to the Root
+        introPane.setMargin(title, new Insets (WINDOW_HEIGHT/4, 0, 0, 0));
+        introPane.setMargin(startGame, new Insets(0, 0, WINDOW_HEIGHT/5, 0));
         introPane.getChildren().addAll(background, title, startGame);
         root.getChildren().add(introPane);
     }
