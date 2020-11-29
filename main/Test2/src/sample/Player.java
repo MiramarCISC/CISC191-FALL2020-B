@@ -22,11 +22,12 @@ public class Player extends Character {
         this.attackStrength += increasedDamage;
     }
 
-    // Get attacked every 1/10 second
     public void attacked(int damage, long timeStart, long timeEnd) {
+        /**
+         * Get attacked every 1/10 second
+         */
         if (Math.round((timeStart - timeEnd) / 10) % 10 == 0) {
             this.healthPoints -= damage;
-            System.out.println("You've been hit! Player HP: " + this.getHealthPoints());
         }
     }
 }

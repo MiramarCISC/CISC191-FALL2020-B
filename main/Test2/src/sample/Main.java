@@ -76,11 +76,6 @@ public class Main extends Application implements Runnable {
             primaryStage.setScene(scene);
             primaryStage.show();
 
-            // Sprite and monster movements
-            //movement(primaryStage, gamePane, scene, icon, newPlayer);
-
-
-
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -136,9 +131,7 @@ public class Main extends Application implements Runnable {
 
         AnimationTimer timer = new AnimationTimer() {
             double delta = 5;
-            double monsterDelta = 1;
-            int direction;
-            double currX, currY, potionX, potionY, weaponX, weaponY, monsterX, monsterY;
+            double currX, currY, monsterX, monsterY;
             long currTime;
 
             @Override
@@ -150,12 +143,14 @@ public class Main extends Application implements Runnable {
 
                 // Check that player has not died
                 if (myPlayer.checkStatus() == true) {
-                    System.out.println("Game over.");
                     root.getChildren().remove(icon);
                     clearPlay(root);
                     displayClose(root);
                     try {
-                        Thread.sleep(1000);
+                        if (!(Thread.interrupted())) {
+                            Thread.yield();
+                        }
+                        displayClose(root);
                         primaryStage.close();
                     } catch (Exception e) {
 
@@ -163,35 +158,10 @@ public class Main extends Application implements Runnable {
                 }
 
                 // CHECK THAT ICON IS CLOSE TO POTIONS
-                // For every potion in the screen, perform task
-                for (int i = 0 ; i < potions.size(); i++) {
-                    potionX = potions.get(i).getLayoutX();
-                    potionY = potions.get(i).getLayoutY();
-
-                    // Apply potion and remove from imagery if potion is encountered
-                    if (checkDistance(potionX, potionY, currX, currY)) {
-                        myPlayer.encounterPotion();
-                        root.getChildren().remove(potions.get(i));
-                        potions.remove(i);
-                        characterStatus(hpPane, myPlayer);
-                    }
-                }
+                checkPotions(root, hpPane, myPlayer);
 
                 // CHECK THAT ICON IS CLOSE TO WEAPONS
-                // For every weapon in the screen, perform task
-                for (int i = 0 ; i < weapons.size(); i++) {
-                    weaponX = weapons.get(i).getLayoutX();
-                    weaponY = weapons.get(i).getLayoutY();
-
-                    // Apply weapon and remove from imagery if weapon is encountered
-                    if (checkDistance(weaponX, weaponY, currX, currY)) {
-                        myPlayer.increaseAttackStrength(weaponList.get(i).getAttackStrength());
-                        root.getChildren().remove(weapons.get(i));
-                        weapons.remove(i);
-                        weaponList.remove(i);
-                        characterStatus(hpPane, myPlayer);
-                    }
-                }
+                checkWeapons(root, hpPane, myPlayer);
 
                 // CHECK THAT ICON IS CLOSE TO MONSTER
                 // For every monster in screen, track location and interaction
@@ -211,48 +181,25 @@ public class Main extends Application implements Runnable {
                             if (attacked) {
                                 try {
                                     monsterList.get(i).attacked(myPlayer.getAttackStrength());
-                                    System.out.println("Attacking monster!");
                                 } catch (Exception e) {}
                             }
 
                             // Remove monster once dead
                             if (monsterList.get(i).checkStatus() == true) {
                                 root.getChildren().remove(monsters.get(i));
+                                monsters.remove(monsters.get(i));
                                 monsterList.remove(monsterList.get(i));
                                 numMonsters++;
                                 characterStatus(hpPane, myPlayer);
-                            } else {
-                                System.out.println("Player HP: " + myPlayer.getHealthPoints() +
-                                        " Monster HP: " + monsterList.get(i).getHealthPoints());
                             }
 
                         } catch (Exception e) {}
                     }
 
-                    // Move monster if monster is still available
-                    try {
-                        // Change direction every 5 seconds or when the edge of the screen is reached
-                        if (Math.round((currTime - timeNow)/10) % 50 == 0 ||
-                                ((monsterX - monsterDelta) < 0) || ((monsterX + monsterDelta) > maxX) ||
-                                ((monsterY - monsterDelta) < 0) || ((monsterY + monsterDelta) > maxY)) {
-
-                            monsterList.get(i).setDirection(rand.nextInt(3));
-                        }
-
-                        // Get the direction of each monster
-                        direction = monsterList.get(i).getDirection();
-
-                        // Move monster in certain direction until edge of screen is reached
-                        if (direction == 0 && (monsterY - monsterDelta > minY)) monsterY -= monsterDelta;
-                        if (direction == 1 && (monsterY + monsterDelta < maxY)) monsterY += monsterDelta;
-                        if (direction == 2 && (monsterX - monsterDelta > minX)) monsterX -= monsterDelta;
-                        if (direction == 3 && (monsterX + monsterDelta < maxX)) monsterX += monsterDelta;
-                        monsters.get(i).relocate(monsterX, monsterY);
-                        monsterList.get(i).setXPos(monsterX);
-                        monsterList.get(i).setYPos(monsterY);
-
-                    } catch (Exception e) {}
                 }
+
+                // Move monsters
+                moveMonsters(currTime);
 
                 // Relocate player
                 // Limit movement to correct arrow press and not at scene boundary
@@ -266,22 +213,13 @@ public class Main extends Application implements Runnable {
                 myPlayer.setYPos(currY);
 
                 // Add a monster every 5 seconds
-                if (Math.round((System.currentTimeMillis() - monsterTime)/10) % 1000 == 0) {
-                    monsterTime = System.currentTimeMillis();
-                    createMonsters(root);
-                }
+                addMonsters(root);
 
                 // Add a potion every 5 seconds
-                if (Math.round((System.currentTimeMillis() - potionTime)/10) % 200 == 0) {
-                    potionTime = System.currentTimeMillis();
-                    createPotions(root);
-                }
+                addPotions(root);
 
-                // Add a potion and weapon every 50 seconds
-                if (Math.round((System.currentTimeMillis() - weaponTime)/10) % 5000 == 0) {
-                    weaponTime = System.currentTimeMillis();
-                    createWeapons(root);
-                }
+                // Add a weapon every 50 seconds
+                addWeapons(root);
 
                 characterStatus(hpPane, myPlayer);
             }
@@ -330,6 +268,7 @@ public class Main extends Application implements Runnable {
     }
 
     public void displayClose(Group root) {
+        root.getChildren().clear();
         StackPane endPane = new StackPane();
         Rectangle background = new Rectangle(WINDOW_WIDTH, WINDOW_HEIGHT);
         Text title = new Text();
@@ -411,6 +350,34 @@ public class Main extends Application implements Runnable {
         return (distance <= 50);
     }
 
+    public void addPotions(Group root) {
+        if (Math.round((System.currentTimeMillis() - potionTime) / 10) % 200 == 0) {
+            potionTime = System.currentTimeMillis();
+            createPotions(root);
+        }
+    }
+
+    public void checkPotions(Group root, StackPane hpPane, Player myPlayer) {
+        double potionX, potionY, currX, currY;
+
+        currX = myPlayer.getXPos();
+        currY = myPlayer.getYPos();
+        // CHECK THAT ICON IS CLOSE TO POTIONS
+        // For every potion in the screen, perform task
+        for (int i = 0 ; i < potions.size(); i++) {
+            potionX = potions.get(i).getLayoutX();
+            potionY = potions.get(i).getLayoutY();
+
+            // Apply potion and remove from imagery if potion is encountered
+            if (checkDistance(potionX, potionY, currX, currY)) {
+                myPlayer.encounterPotion();
+                root.getChildren().remove(potions.get(i));
+                potions.remove(i);
+                characterStatus(hpPane, myPlayer);
+            }
+        }
+    }
+
     public void createPotions(Group root) {
         try {
             // Setup a potion node
@@ -433,6 +400,33 @@ public class Main extends Application implements Runnable {
 
         } catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+
+    public void addWeapons(Group root) {
+        if (Math.round((System.currentTimeMillis() - weaponTime)/10) % 5000 == 0) {
+            weaponTime = System.currentTimeMillis();
+            createWeapons(root);
+        }
+    }
+
+    public void checkWeapons(Group root, StackPane hpPane, Player myPlayer) {
+        double weaponX, weaponY, currX, currY;
+
+        currX = myPlayer.getXPos();
+        currY = myPlayer.getYPos();
+        for (int i = 0 ; i < weapons.size(); i++) {
+            weaponX = weapons.get(i).getLayoutX();
+            weaponY = weapons.get(i).getLayoutY();
+
+            // Apply weapon and remove from imagery if weapon is encountered
+            if (checkDistance(weaponX, weaponY, currX, currY)) {
+                myPlayer.increaseAttackStrength(weaponList.get(i).getAttackStrength());
+                root.getChildren().remove(weapons.get(i));
+                weapons.remove(i);
+                weaponList.remove(i);
+                characterStatus(hpPane, myPlayer);
+            }
         }
     }
 
@@ -460,6 +454,51 @@ public class Main extends Application implements Runnable {
             weaponList.add(newWeapon);
         } catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+
+    public void addMonsters(Group root) {
+        if (Math.round((System.currentTimeMillis() - monsterTime)/10) % 1000 == 0) {
+            monsterTime = System.currentTimeMillis();
+            createMonsters(root);
+        }
+    }
+
+    public void checkMonsters(Group root, StackPane hpPane, Player myPlayer) {
+
+    }
+
+    public void moveMonsters(long currTime) {
+        int direction;
+        double monsterX, monsterY, monsterDelta;
+        monsterDelta = 1;
+
+        for (int i = 0; i < monsters.size(); i++) {
+            monsterX = monsters.get(i).getLayoutX();
+            monsterY = monsters.get(i).getLayoutY();
+            try {
+                // Change direction every 5 seconds or when the edge of the screen is reached
+                if (Math.round((currTime - timeNow) / 10) % 50 == 0 ||
+                        ((monsterX - monsterDelta) < 0) || ((monsterX + monsterDelta) > maxX) ||
+                        ((monsterY - monsterDelta) < 0) || ((monsterY + monsterDelta) > maxY)) {
+
+                    monsterList.get(i).setDirection(rand.nextInt(3));
+                }
+
+                // Get the direction of each monster
+                direction = monsterList.get(i).getDirection();
+
+                // Move monster in certain direction until edge of screen is reached
+                if (direction == 0 && (monsterY - monsterDelta > minY)) monsterY -= monsterDelta;
+                if (direction == 1 && (monsterY + monsterDelta < maxY)) monsterY += monsterDelta;
+                if (direction == 2 && (monsterX - monsterDelta > minX)) monsterX -= monsterDelta;
+                if (direction == 3 && (monsterX + monsterDelta < maxX)) monsterX += monsterDelta;
+                monsters.get(i).relocate(monsterX, monsterY);
+                monsterList.get(i).setXPos(monsterX);
+                monsterList.get(i).setYPos(monsterY);
+
+            } catch (Exception e) {
+            }
         }
     }
 
