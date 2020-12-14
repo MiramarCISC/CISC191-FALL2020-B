@@ -144,17 +144,9 @@ public class Main extends Application implements Runnable {
                 // Check that player has not died
                 if (myPlayer.checkStatus() == true) {
                     root.getChildren().remove(icon);
-                    clearPlay(root);
+                    this.stop();
+                    //clearPlay(root);
                     displayClose(root);
-                    try {
-                        if (!(Thread.interrupted())) {
-                            Thread.yield();
-                        }
-                        displayClose(root);
-                        primaryStage.close();
-                    } catch (Exception e) {
-
-                    }
                 }
 
                 // CHECK THAT ICON IS CLOSE TO POTIONS
@@ -275,6 +267,9 @@ public class Main extends Application implements Runnable {
         title.setText("GAME OVER");
         title.setFill(Paint.valueOf("white"));
         title.setFont(Font.font("Verdana", FontWeight.BOLD,70));
+
+
+
         endPane.getChildren().addAll(background, title);
         root.getChildren().add(endPane);
     }

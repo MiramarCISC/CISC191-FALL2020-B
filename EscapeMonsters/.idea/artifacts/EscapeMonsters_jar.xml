@@ -1,0 +1,17 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="EscapeMonsters:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/EscapeMonsters_jar</output-path>
+    <root id="archive" name="EscapeMonsters.jar">
+      <element id="module-output" name="EscapeMonsters" />
+      <element id="extracted-dir" path="$JAVAFX$/lib/src.zip" path-in-jar="/" />
+      <element id="extracted-dir" path="$JAVAFX$/lib/javafx-swt.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$JAVAFX$/lib/javafx.web.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$JAVAFX$/lib/javafx.base.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$JAVAFX$/lib/javafx.fxml.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$JAVAFX$/lib/javafx.media.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$JAVAFX$/lib/javafx.swing.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$JAVAFX$/lib/javafx.controls.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$JAVAFX$/lib/javafx.graphics.jar" path-in-jar="/" />
+    </root>
+  </artifact>
+</component>
