@@ -1,0 +1,40 @@
+Map
+	-Array<BoardObject>[][] mapArray
+	-int level //Used to determine power of monsters
+	+void generateMap()  //Creates a random set of hollow rectangles of Wall objects, filled with Floor Objects, connected by Door objects, populated 	with Monster and Treasure objects, and a single Player object and Staircase object, stored in mapArray.
+	+BoardObject checkLocation(int x, int y)  //Called by Player.movePlayer() and Monster.moveMonster(), returns the BoardObject that is at that location
+	+void displayMap() //Displays the map
+
+abstract BoardObject
+	Floor extends BoardObject //No function other than can be overwritten by moving Character, and for display purposes
+	Wall extends BoardObject //No function other than restricts movement when called by Map.checkLocation and for display purposes
+	Treasure extends BoardObject
+		-string contents //Either health potion or strength potion, maybe more
+		+void open()  //Adds treasure to Player, removes self
+	Staircase extends BoardObject
+		+void descend() //Calls MapgenerateMap()
+	Door extends BoardObject
+		+void open()  //Makes the door passable by becoming a Floor Object
+	Character extends BoardObject
+		+void attack(Character target) //Called when Player and Monster objects try to enter the same array location, deals Strength damage to HP
+		Player extends Character
+			-int MaxHP
+			-int CurrentHP  //Boosted by health potion from treasure
+			-int Strength //Boosted by strength potion from treasure
+			-array<String>[] inventory //Holds potions
+			+movePlayer(input) //Takes input from keyboard and tries to move player in that direction on the map. Empty allows movement. Walls restrict movement.  Stairs call descend.  Doors and Treasures call open.  Monsters call attack
+			+void displayStatus() //Displays contents of all private fields
+			+void useItem(int location) //Deletes a potion from the inventory, applying its affects to the Player
+		Monster extends Character
+			-int HP
+			-int Strength
+			+moveMonster() //Called after each player input, monster attempts to move closer to the player. Wall, Treasure, Doors, Stairs and Monsters restrict movement, empty allows movement, Player is attacked
+
+Game
+	+void main(strings args)
+	Loop:
+	Map.displayMap() //Current map state is shown
+	Player.displayStatus() //Current player state is shown
+	getInput(scanner)  //Allows Player to move in 4(8?) directions or use an item from their inventory, calls appropriate method from Player class
+	Monster.moveMonster() //All monsters move
+	Display combat results
