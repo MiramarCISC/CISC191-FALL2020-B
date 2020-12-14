@@ -2,6 +2,7 @@ package gameplay;
 
 // Refer to https://stackoverflow.com/questions/29057870/in-javafx-how-do-i-move-a-sprite-across-the-screen
 // Refer to https://www.youtube.com/watch?v=kkZ-YNv7B0E
+// Refer to https://www.youtube.com/watch?v=yG8YCLYccVo
 
 import javafx.animation.AnimationTimer;
 import javafx.application.Application;
